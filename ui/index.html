@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blue RAG</title>
+    <style>
+      body { margin: 0; background: #0f172a; color: #e2e8f0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
+      #boot { min-height: 100vh; display: grid; place-items: center; }
+      #boot > div { text-align: center; padding: 32px; border: 1px solid rgba(148,163,184,.25); border-radius: 20px; background: rgba(15,23,42,.8); }
+      #boot h1 { margin: 0 0 8px; font-size: 28px; }
+      #boot p { margin: 0; color: #94a3b8; }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div id="boot">
+        <div>
+          <h1>Blue RAG</h1>
+          <p>Starting offline knowledge assistant…</p>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

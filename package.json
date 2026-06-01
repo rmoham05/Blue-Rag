@@ -1,0 +1,88 @@
+{
+  "name": "blue-rag",
+  "version": "0.2.3",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "smoke": "node scripts/smoke-test.mjs",
+    "clean:release": "node scripts/clean-release.mjs",
+    "ui:dev": "vite",
+    "ui:build": "vite build",
+    "electron:dev": "npm run app:build && electron .",
+    "app:build": "npm run build && npm run ui:build",
+    "dist": "npm run clean:release && npm run app:build && electron-builder --win"
+  },
+  "dependencies": {
+    "@fastify/cors": "latest",
+    "chokidar": "latest",
+    "dotenv": "latest",
+    "fastify": "latest",
+    "mammoth": "latest",
+    "pdf-parse": "latest",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "tsx": "latest",
+    "typescript": "latest",
+    "electron": "^42.3.0",
+    "electron-builder": "^26.8.1",
+    "@vitejs/plugin-react": "^6.0.2",
+    "vite": "^8.0.14",
+    "concurrently": "^10.0.0",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "ai.bluemouse.bluerag",
+    "productName": "Blue RAG",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "ui/dist/**/*",
+      "assets/**/*",
+      "models/**/*",
+      "vendor/llama.cpp/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.cjs"
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "signAndEditExecutable": false,
+      "verifyUpdateCodeSignature": false
+    },
+    "asar": false,
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Blue RAG",
+      "artifactName": "Blue-RAG-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "Blue-RAG-Portable-${version}.exe"
+    }
+  },
+  "description": "Offline multilingual desktop RAG application optimized for Persian/Farsi documents.",
+  "author": "Ray"
+}
