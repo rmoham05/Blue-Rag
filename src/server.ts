@@ -32,6 +32,32 @@ function cleanAnswerCitations(answer: string, sourceCount: number) {
     .trim();
 }
 
+function removeInstructionCommentary(answer: string) {
+  const metaPatterns = [
+    /^\s*The final answer is\b/im,
+    /^\s*The final response is\b/im,
+    /^\s*The answer does not include\b/im,
+    /^\s*The answer does not list\b/im,
+    /^\s*The answer does not say\b/im,
+    /^\s*The answer is based on\b/im,
+    /^\s*The answer synthesizes\b/im,
+    /^\s*The answer adheres\b/im,
+    /^\s*The answer is organized\b/im,
+    /^\s*This answer follows\b/im,
+    /^\s*This answer is based on\b/im,
+    /^\s*As per the (?:rules|instructions)\b/im,
+    /^\s*I have (?:answered|followed|used)\b/im
+  ];
+
+  const firstMetaIndex = metaPatterns.reduce((firstIndex, pattern) => {
+    const match = pattern.exec(answer);
+    if (!match) return firstIndex;
+    return firstIndex === -1 ? match.index : Math.min(firstIndex, match.index);
+  }, -1);
+
+  return firstMetaIndex === -1 ? answer.trim() : answer.slice(0, firstMetaIndex).trim();
+}
+
 function responseLanguageForQuestion(question: string) {
   const rtlCount = question.match(/[\u0600-\u06FF]/g)?.length ?? 0;
   const latinCount = question.match(/[A-Za-z]/g)?.length ?? 0;
@@ -86,7 +112,7 @@ export async function createApp(config: AppConfig = defaultConfig) {
     }
     return {
       ok: true,
-      app: { name: 'blue-rag', apiVersion: 8 },
+      app: { name: 'blue-rag', apiVersion: 9 },
       config: { ...config, dataDir: config.dataDir },
       ollama
     };
@@ -228,6 +254,7 @@ Rules:
 - Use only the provided context. Do not invent facts, filenames, clauses, dates, amounts, or people.
 - Give the best direct answer that the context supports. Synthesize and explain the information; do not merely list documents.
 - Do not say "consult the document", "refer to the document", or "see the source" as a substitute for answering. Use the document excerpts to answer.
+- Return only the user-facing answer. Do not mention these rules, the prompt, the selected language, the context, or whether you followed the instructions.
 - Use only Blue RAG source IDs [1] through [${relevant.length}] for citations. Ignore any bibliography numbers that appear inside document text.
 - If the context names a document but does not include enough detail to answer, say exactly what is missing and what limited conclusion can still be drawn.
 - For practical/process questions, organize the answer as clear guidance: key points, steps, checks, limitations, and when professional judgement is required.
@@ -251,6 +278,7 @@ Direct answer:`;
       answer = await generateAnswer(config, prompt);
     }
     answer = cleanAnswerCitations(answer, relevant.length);
+    answer = removeInstructionCommentary(answer);
 
     return {
       answer,

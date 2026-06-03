@@ -7,11 +7,11 @@ Use this file as the first thing to read when returning to the Blue RAG project.
 - Product name: Blue RAG
 - Repo: https://github.com/rmoham05/Blue-Rag
 - Local working folder: `C:\Users\14169\OneDrive\Desktop\Main\Learning\AIAutomate\Projects\local-rag-app`
-- Current version at time of this note: `0.2.6`
-- Current Git commit: `33a16b7 Answer in detected question language`
+- Current version at last update: `0.2.7`
+- Current Git commit: run `git log --oneline -5` for the latest commit after future updates.
 - Current release files:
-  - `release\Blue-RAG-Setup-0.2.6.exe`
-  - `release\Blue-RAG-Portable-0.2.6.exe`
+  - `release\Blue-RAG-Setup-0.2.7.exe`
+  - `release\Blue-RAG-Portable-0.2.7.exe`
 
 ## What The App Is
 
@@ -114,6 +114,16 @@ As of `0.2.6`, the backend detects the question language and injects a hard inst
 
 Fallback messages such as "no indexed documents" and "no sufficiently relevant information" also follow the detected language.
 
+### Instruction Commentary Cleanup
+
+As of `0.2.7`, the app suppresses model meta-commentary such as:
+
+- "The final answer is in English as per the rules..."
+- "The answer does not include Persian/Farsi text..."
+- "The answer synthesizes the information..."
+
+The prompt now says to return only the user-facing answer, and the backend removes common instruction-compliance paragraphs if the model still emits them.
+
 ## Important Files
 
 - `src/server.ts`: Fastify API, RAG retrieval, prompt construction, citation cleanup, language detection.
@@ -199,4 +209,3 @@ For a normal client handoff:
   - add a diagnostic/export log button
   - consider GitHub Releases or another delivery process for EXEs/model files
   - consider Git LFS or external storage if vendor/runtime binaries become too large
-

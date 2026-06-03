@@ -7,13 +7,13 @@ Offline Windows desktop RAG app optimized for multilingual and Persian/Farsi doc
 Recommended Windows installer:
 
 ```text
-release/Blue-RAG-Setup-0.2.6.exe
+release/Blue-RAG-Setup-0.2.7.exe
 ```
 
 Portable Windows executable:
 
 ```text
-release/Blue-RAG-Portable-0.2.6.exe
+release/Blue-RAG-Portable-0.2.7.exe
 ```
 
 Unpacked executable used for verification:
