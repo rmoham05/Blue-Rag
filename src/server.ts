@@ -36,7 +36,7 @@ export async function createApp(config: AppConfig = defaultConfig) {
     }
     return {
       ok: true,
-      app: { name: 'blue-rag', apiVersion: 5 },
+      app: { name: 'blue-rag', apiVersion: 6 },
       config: { ...config, dataDir: config.dataDir },
       ollama
     };
@@ -163,11 +163,31 @@ export async function createApp(config: AppConfig = defaultConfig) {
 
     const context = relevant.map((item, index) => {
       const sourceId = index + 1;
-      const text = item.chunk.text.length > 1600 ? `${item.chunk.text.slice(0, 1600)}…` : item.chunk.text;
+      const text = item.chunk.text.length > 1400 ? `${item.chunk.text.slice(0, 1400)}...` : item.chunk.text;
       return `[${sourceId}] File: ${item.chunk.metadata.fileName}\nPath: ${item.chunk.metadata.filePath}\nScore: ${item.score.toFixed(4)}\nText:\n${text}`;
     }).join('\n\n---\n\n');
 
-    const prompt = `You are an offline multilingual RAG assistant optimized for Persian/Farsi and English documents.\n\nRules:\n- Answer using only the provided context when possible.\n- If the context is insufficient, say that clearly.\n- Answer in the same language as the user's question. If the user asks in Persian/Farsi, answer naturally in Persian.\n- For Persian/Farsi answers, preserve right-to-left sentence order. Keep English technical terms short and place them in parentheses only when useful. Do not over-mix English inside Persian sentences.\n- Cite sources inline like [1], [2].\n- Do not invent facts, filenames, clauses, dates, amounts, or people.\n\nContext:\n${context}\n\nUser question:\n${body.question}\n\nAnswer:`;
+    const prompt = `You are Blue RAG, an offline multilingual document-grounded assistant optimized for Persian/Farsi and English documents.
+
+Your job is to read the retrieved document excerpts, reason across them, and answer the user's question directly. You are not a search-results tool.
+
+Rules:
+- Use only the provided context. Do not invent facts, filenames, clauses, dates, amounts, or people.
+- Give the best direct answer that the context supports. Synthesize and explain the information; do not merely list documents.
+- Do not say "consult the document", "refer to the document", or "see the source" as a substitute for answering. Use the document excerpts to answer.
+- If the context names a document but does not include enough detail to answer, say exactly what is missing and what limited conclusion can still be drawn.
+- For practical/process questions, organize the answer as clear guidance: key points, steps, checks, limitations, and when professional judgement is required.
+- Cite sources inline like [1], [2] next to the claims they support.
+- Answer in the same language as the user's question. If the user asks in Persian/Farsi, answer naturally in Persian.
+- For Persian/Farsi answers, preserve right-to-left sentence order. Keep English technical terms short and place them in parentheses only when useful.
+
+Context:
+${context}
+
+User question:
+${body.question}
+
+Direct answer:`;
 
     let answer: string;
     if (isLlamaCppModel(config.llmModel)) {

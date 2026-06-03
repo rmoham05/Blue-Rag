@@ -84,7 +84,7 @@ export async function generateAnswer(config: AppConfig, prompt: string): Promise
           temperature: 0.15,
           top_p: 0.9,
           num_ctx: 4096,
-          num_predict: 450
+          num_predict: 850
         }
       })
     }, 180_000, 2);

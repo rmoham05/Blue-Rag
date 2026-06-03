@@ -16,6 +16,6 @@ export const config: AppConfig = {
   dataDir: path.resolve(process.env.RAG_DATA_DIR ?? './.rag-data'),
   chunkChars: numberFromEnv('RAG_CHUNK_CHARS', 1600),
   chunkOverlap: numberFromEnv('RAG_CHUNK_OVERLAP', 250),
-  topK: numberFromEnv('RAG_TOP_K', 6),
+  topK: numberFromEnv('RAG_TOP_K', 8),
   port: numberFromEnv('RAG_PORT', 3344)
 };

@@ -5,7 +5,7 @@
 Send the client:
 
 ```text
-Blue-RAG-Setup-0.2.3.exe
+Blue-RAG-Setup-0.2.4.exe
 ```
 
 This build can include the local `bge-m3` embedding model, so the client does
@@ -53,5 +53,5 @@ models/llm/<answer-model>.gguf
 Then send only:
 
 ```text
-release/Blue-RAG-Setup-0.2.3.exe
+release/Blue-RAG-Setup-0.2.4.exe
 ```

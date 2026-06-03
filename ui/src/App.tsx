@@ -240,11 +240,11 @@ export function App() {
     setMessages(current => [...current, { role: 'user', text: q }]);
     setBusy(true);
     setBusyStartedAt(Date.now());
-    setWorkLabel('Retrieving sources and generating locally');
+    setWorkLabel('Reading evidence and drafting an answer locally');
     try {
       const result = await request<{ answer: string; sources: Source[] }>('/chat/ask', {
         method: 'POST',
-        body: JSON.stringify({ question: q, top_k: 4 })
+        body: JSON.stringify({ question: q, top_k: 8 })
       });
       setMessages(current => [...current, { role: 'assistant', text: result.answer, sources: result.sources }]);
     } catch (error) {
@@ -361,7 +361,7 @@ export function App() {
                 <div className="sources">
                   {message.sources.map(source => (
                     <button key={`${source.file}-${source.chunkIndex}`} onClick={() => window.localRag?.openPath(source.file)}>
-                      [{source.id}] {source.fileName} · {(source.score * 100).toFixed(1)}%
+                      [{source.id}] {source.fileName} - {(source.score * 100).toFixed(1)}%
                     </button>
                   ))}
                 </div>

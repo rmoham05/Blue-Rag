@@ -243,7 +243,7 @@ export async function generateWithLlamaCpp(prompt: string) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       prompt,
-      n_predict: 450,
+      n_predict: 850,
       temperature: 0.15,
       top_p: 0.9,
       stop: ['\n\nUser question:']
