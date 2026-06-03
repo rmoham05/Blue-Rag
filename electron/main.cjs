@@ -25,7 +25,7 @@ async function isBackendAlreadyRunning() {
     const response = await fetch('http://127.0.0.1:3344/health');
     if (!response.ok) return false;
     const health = await response.json();
-    if (health?.app?.name === 'blue-rag' && health?.app?.apiVersion >= 7) return true;
+    if (health?.app?.name === 'blue-rag' && health?.app?.apiVersion >= 8) return true;
     const error = new Error('An older Blue RAG backend is already running on 127.0.0.1:3344. Close every Blue RAG window from Task Manager, then open this updated build again.');
     error.code = 'STALE_LOCAL_RAG_BACKEND';
     throw error;

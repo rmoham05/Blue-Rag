@@ -32,6 +32,36 @@ function cleanAnswerCitations(answer: string, sourceCount: number) {
     .trim();
 }
 
+function responseLanguageForQuestion(question: string) {
+  const rtlCount = question.match(/[\u0600-\u06FF]/g)?.length ?? 0;
+  const latinCount = question.match(/[A-Za-z]/g)?.length ?? 0;
+
+  if (rtlCount >= 2 && rtlCount >= latinCount * 0.15) {
+    return {
+      name: 'Persian/Farsi',
+      instruction: 'You MUST answer in Persian/Farsi. Keep the answer natural and right-to-left. Do not answer in English unless the user explicitly asks for English.',
+      noDocuments: 'هنوز هیچ سندی ایندکس نشده است.',
+      noRelevant: 'اطلاعات کافی و مرتبطی در اسناد ایندکس‌شده پیدا نکردم تا با اطمینان پاسخ بدهم. سؤال را دقیق‌تر بپرسید یا اسنادی را ایندکس کنید که مستقیماً درباره این موضوع باشند.'
+    };
+  }
+
+  if (latinCount >= 2) {
+    return {
+      name: 'English',
+      instruction: 'You MUST answer in English. Do not answer in Persian/Farsi unless the user explicitly asks for Persian/Farsi.',
+      noDocuments: 'No documents have been indexed yet.',
+      noRelevant: 'I could not find sufficiently relevant information in the indexed documents to answer that. Try asking a more specific question, or index documents that discuss this topic directly.'
+    };
+  }
+
+  return {
+    name: 'the same language as the user question',
+    instruction: 'Answer in the same language as the user question.',
+    noDocuments: 'No documents have been indexed yet.',
+    noRelevant: 'I could not find sufficiently relevant information in the indexed documents to answer that. Try asking a more specific question, or index documents that discuss this topic directly.'
+  };
+}
+
 export async function createApp(config: AppConfig = defaultConfig) {
   await loadModelConfig(config);
   await applyBundledModelDefaults(config);
@@ -56,7 +86,7 @@ export async function createApp(config: AppConfig = defaultConfig) {
     }
     return {
       ok: true,
-      app: { name: 'blue-rag', apiVersion: 7 },
+      app: { name: 'blue-rag', apiVersion: 8 },
       config: { ...config, dataDir: config.dataDir },
       ollama
     };
@@ -153,10 +183,11 @@ export async function createApp(config: AppConfig = defaultConfig) {
 
   app.post('/chat/ask', async (request) => {
     const body = z.object({ question: z.string().min(1), top_k: z.number().int().positive().max(20).optional() }).parse(request.body);
+    const responseLanguage = responseLanguageForQuestion(body.question);
     const folders = await loadFolders(config);
     const chunks = filterChunksForFolders(await loadChunks(config), folders);
     if (!chunks.length) {
-      return { answer: 'No documents have been indexed yet.', sources: [] };
+      return { answer: responseLanguage.noDocuments, sources: [] };
     }
 
     const queryEmbedding = await embedText(config, body.question);
@@ -169,7 +200,7 @@ export async function createApp(config: AppConfig = defaultConfig) {
     const relevant = ranked.filter(item => item.score >= 0.34);
     if (!relevant.length) {
       return {
-        answer: 'I could not find sufficiently relevant information in the indexed documents to answer that. Try asking a more specific question, or index documents that discuss this topic directly.',
+        answer: responseLanguage.noRelevant,
         sources: ranked.map((item, index) => ({
           id: index + 1,
           score: item.score,
@@ -193,6 +224,7 @@ export async function createApp(config: AppConfig = defaultConfig) {
 Your job is to read the retrieved document excerpts, reason across them, and answer the user's question directly. You are not a search-results tool.
 
 Rules:
+- Response language: ${responseLanguage.instruction}
 - Use only the provided context. Do not invent facts, filenames, clauses, dates, amounts, or people.
 - Give the best direct answer that the context supports. Synthesize and explain the information; do not merely list documents.
 - Do not say "consult the document", "refer to the document", or "see the source" as a substitute for answering. Use the document excerpts to answer.
@@ -200,7 +232,7 @@ Rules:
 - If the context names a document but does not include enough detail to answer, say exactly what is missing and what limited conclusion can still be drawn.
 - For practical/process questions, organize the answer as clear guidance: key points, steps, checks, limitations, and when professional judgement is required.
 - Cite sources inline like [1], [2] next to the claims they support.
-- Answer in the same language as the user's question. If the user asks in Persian/Farsi, answer naturally in Persian.
+- The final answer must be in ${responseLanguage.name}.
 - For Persian/Farsi answers, preserve right-to-left sentence order. Keep English technical terms short and place them in parentheses only when useful.
 
 Context:

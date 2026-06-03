@@ -5,13 +5,13 @@
 Recommended Windows installer:
 
 ```text
-release/Blue-RAG-Setup-0.2.5.exe
+release/Blue-RAG-Setup-0.2.6.exe
 ```
 
 Portable Windows desktop app:
 
 ```text
-release/Blue-RAG-Portable-0.2.5.exe
+release/Blue-RAG-Portable-0.2.6.exe
 ```
 
 Unpacked app for local verification:
