@@ -12,6 +12,26 @@ import { checkOllama, embedText, generateAnswer } from './ollama.js';
 import { addFolder, clearFolders, cosineSimilarity, filterChunksForFolders, loadChunks, loadFolders, removeFolder, replaceFolders } from './store.js';
 import type { AppConfig } from './types.js';
 
+function sanitizeContextText(text: string) {
+  return text
+    .replace(/\[(?:\d{1,4})(?:\s*[,;]\s*\d{1,4})*\]/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+function cleanAnswerCitations(answer: string, sourceCount: number) {
+  return answer
+    .replace(/\[(\d{1,4})\]/g, (match, sourceId) => {
+      const id = Number(sourceId);
+      return id >= 1 && id <= sourceCount ? match : '';
+    })
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\s+([,.;:!?،؛؟])/g, '$1')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export async function createApp(config: AppConfig = defaultConfig) {
   await loadModelConfig(config);
   await applyBundledModelDefaults(config);
@@ -36,7 +56,7 @@ export async function createApp(config: AppConfig = defaultConfig) {
     }
     return {
       ok: true,
-      app: { name: 'blue-rag', apiVersion: 6 },
+      app: { name: 'blue-rag', apiVersion: 7 },
       config: { ...config, dataDir: config.dataDir },
       ollama
     };
@@ -163,7 +183,8 @@ export async function createApp(config: AppConfig = defaultConfig) {
 
     const context = relevant.map((item, index) => {
       const sourceId = index + 1;
-      const text = item.chunk.text.length > 1400 ? `${item.chunk.text.slice(0, 1400)}...` : item.chunk.text;
+      const rawText = item.chunk.text.length > 1400 ? `${item.chunk.text.slice(0, 1400)}...` : item.chunk.text;
+      const text = sanitizeContextText(rawText);
       return `[${sourceId}] File: ${item.chunk.metadata.fileName}\nPath: ${item.chunk.metadata.filePath}\nScore: ${item.score.toFixed(4)}\nText:\n${text}`;
     }).join('\n\n---\n\n');
 
@@ -175,6 +196,7 @@ Rules:
 - Use only the provided context. Do not invent facts, filenames, clauses, dates, amounts, or people.
 - Give the best direct answer that the context supports. Synthesize and explain the information; do not merely list documents.
 - Do not say "consult the document", "refer to the document", or "see the source" as a substitute for answering. Use the document excerpts to answer.
+- Use only Blue RAG source IDs [1] through [${relevant.length}] for citations. Ignore any bibliography numbers that appear inside document text.
 - If the context names a document but does not include enough detail to answer, say exactly what is missing and what limited conclusion can still be drawn.
 - For practical/process questions, organize the answer as clear guidance: key points, steps, checks, limitations, and when professional judgement is required.
 - Cite sources inline like [1], [2] next to the claims they support.
@@ -196,6 +218,7 @@ Direct answer:`;
     } else {
       answer = await generateAnswer(config, prompt);
     }
+    answer = cleanAnswerCitations(answer, relevant.length);
 
     return {
       answer,
