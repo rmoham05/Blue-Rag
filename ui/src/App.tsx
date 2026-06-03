@@ -62,6 +62,11 @@ function friendlyModelOptionLabel(model: string, role: 'answer' | 'embedding') {
   return friendlyAnswerModelLabel(model);
 }
 
+function friendlyLocalModelLabel(file: LocalModelFile, folderPath?: string) {
+  const candidates = [file.displayName, file.fileName, file.filePath, folderPath].filter(Boolean).join(' ');
+  return friendlyAnswerModelLabel(candidates);
+}
+
 export function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -358,11 +363,11 @@ export function App() {
           <button onClick={chooseAndImportGgufFile}>Choose GGUF file</button>
           <button onClick={selectLocalModelFolder}>Locate GGUF folder</button>
           <p className="muted">Folder picker shows folders only. Use “Choose GGUF file” if you want to see/select the model file directly.</p>
-          {localModelLibrary?.folderPath && <div className="folder"><span>{localModelLibrary.folderPath}</span></div>}
+          {localModelLibrary?.folderPath && <div className="folder"><span>Model folder ready</span></div>}
           <div className="local-models">
             {(localModelLibrary?.files ?? []).slice(0, 8).map(file => (
               <div className="local-model" key={file.filePath}>
-                <span>{friendlyAnswerModelLabel(file.displayName ?? file.fileName)}</span>
+                <span>{friendlyLocalModelLabel(file, localModelLibrary?.folderPath)}</span>
                 <small>{formatSize(file.sizeBytes)}{file.isSplit ? ` · split GGUF (${file.shardFiles?.length ?? '?'} parts)` : ''}</small>
                 <button onClick={() => importLocalModel(file)} disabled={busy}>{file.isSplit ? 'Load with llama.cpp' : 'Import/select'}</button>
               </div>
