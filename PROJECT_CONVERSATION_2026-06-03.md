@@ -7,11 +7,11 @@ Use this file as the first thing to read when returning to the Blue RAG project.
 - Product name: Blue RAG
 - Repo: https://github.com/rmoham05/Blue-Rag
 - Local working folder: `C:\Users\14169\OneDrive\Desktop\Main\Learning\AIAutomate\Projects\local-rag-app`
-- Current version at last update: `0.2.7`
+- Current version at last update: `0.2.8`
 - Current Git commit: run `git log --oneline -5` for the latest commit after future updates.
 - Current release files:
-  - `release\Blue-RAG-Setup-0.2.7.exe`
-  - `release\Blue-RAG-Portable-0.2.7.exe`
+  - `release\Blue-RAG-Setup-0.2.8.exe`
+  - `release\Blue-RAG-Portable-0.2.8.exe`
 
 ## What The App Is
 
@@ -123,6 +123,10 @@ As of `0.2.7`, the app suppresses model meta-commentary such as:
 - "The answer synthesizes the information..."
 
 The prompt now says to return only the user-facing answer, and the backend removes common instruction-compliance paragraphs if the model still emits them.
+
+### Friendly Model Display
+
+As of `0.2.8`, the left sidebar hides raw model names and full GGUF paths. It shows friendly labels such as `7B answer model ready`, `14B answer model ready`, and `Bundled embeddings ready`. Load notices also say `7B model is loaded and ready` instead of showing a file path.
 
 ## Important Files
 

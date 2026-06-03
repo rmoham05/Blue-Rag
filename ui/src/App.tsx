@@ -35,6 +35,33 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+function visibleModelName(model?: string) {
+  if (!model) return '';
+  const withoutRuntime = model.replace(/^llamacpp:/i, '');
+  const fileName = withoutRuntime.split(/[\\/]/).pop() ?? withoutRuntime;
+  return fileName.replace(/\.gguf$/i, '').replace(/-\d{5}-of-\d{5}$/i, '');
+}
+
+function modelScale(model?: string) {
+  const match = visibleModelName(model).match(/(?:^|[^a-z0-9])(\d+(?:\.\d+)?)\s*[-_ ]?b(?:[^a-z0-9]|$)/i);
+  return match ? `${match[1]}B` : '';
+}
+
+function friendlyAnswerModelLabel(model?: string) {
+  const scale = modelScale(model);
+  return scale ? `${scale} answer model` : 'Answer model';
+}
+
+function friendlyLoadedModelMessage(model?: string) {
+  const scale = modelScale(model);
+  return scale ? `${scale} model is loaded and ready.` : 'Model is loaded and ready.';
+}
+
+function friendlyModelOptionLabel(model: string, role: 'answer' | 'embedding') {
+  if (role === 'embedding') return model.startsWith('llamacpp:') ? 'Bundled embedding model' : 'Embedding model';
+  return friendlyAnswerModelLabel(model);
+}
+
 export function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -71,6 +98,16 @@ export function App() {
     if (!current || models.some(model => model.name === current)) return models;
     return [{ name: current, family: 'current' }, ...models];
   }, [modelSettings]);
+  const answerModelStatus = useMemo(() => {
+    const model = health?.config?.llmModel;
+    if (!model) return 'Not selected';
+    return `${friendlyAnswerModelLabel(model)} ready`;
+  }, [health]);
+  const embeddingModelStatus = useMemo(() => {
+    const model = health?.config?.embedModel;
+    if (!model) return 'Not selected';
+    return model.startsWith('llamacpp:') ? 'Bundled embeddings ready' : 'Embeddings ready';
+  }, [health]);
 
   async function refresh() {
     const [h, f, s, m, l] = await Promise.all([
@@ -172,13 +209,13 @@ export function App() {
         const acceleration = result.backend && result.backend !== 'cpu'
           ? ` using ${result.backend}${result.device ? ` on ${result.device}` : ''}`
           : ' using CPU';
-        setNotice(`Loaded split GGUF with llama.cpp${acceleration}: ${result.modelPath}`);
+        setNotice(`${friendlyLoadedModelMessage(result.modelPath)} Running${acceleration}.`);
       } else {
         const result = await request<{ modelName: string }>('/local-models/import', {
           method: 'POST',
           body: JSON.stringify({ filePath: file.filePath })
         });
-        setNotice(`Imported and selected model: ${result.modelName}`);
+        setNotice(`${friendlyAnswerModelLabel(result.modelName)} imported and selected.`);
       }
       await refresh();
     } catch (error) {
@@ -197,7 +234,7 @@ export function App() {
     try {
       const modelName = modelSettings?.current.llmModel;
       await request('/models/load', { method: 'POST', body: JSON.stringify({ modelName }) });
-      setNotice(`Loaded model: ${modelName}`);
+      setNotice(friendlyLoadedModelMessage(modelName));
     } finally {
       setBusy(false);
       setBusyStartedAt(null);
@@ -208,7 +245,7 @@ export function App() {
   async function ejectSelectedModel() {
     const modelName = modelSettings?.current.llmModel;
     await request('/models/eject', { method: 'POST', body: JSON.stringify({ modelName }) });
-    setNotice(`Ejected model: ${modelName}`);
+    setNotice('Answer model ejected.');
   }
 
   const formatSize = (bytes: number) => `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
@@ -270,8 +307,8 @@ export function App() {
         <section className="card">
           <h2>Status</h2>
           <div className="status-row"><span>Runtime</span><b className={runtimeReady ? 'ok' : 'bad'}>{runtimeLabel}</b></div>
-          <div className="status-row"><span>LLM</span><b>{health?.config?.llmModel ?? '...'}</b></div>
-          <div className="status-row"><span>Embeddings</span><b>{health?.config?.embedModel ?? '...'}</b></div>
+          <div className="status-row"><span>LLM</span><b>{answerModelStatus}</b></div>
+          <div className="status-row"><span>Embeddings</span><b>{embeddingModelStatus}</b></div>
           <div className="status-row"><span>Mode</span><b>100% local</b></div>
         </section>
 
@@ -303,11 +340,11 @@ export function App() {
           <h2>Models</h2>
           <label className="model-label">Answer model</label>
           <select value={modelSettings?.current.llmModel ?? ''} onChange={event => updateModel('llmModel', event.target.value)}>
-            {answerModelOptions.map(model => <option key={model.name} value={model.name}>{model.name}</option>)}
+            {answerModelOptions.map(model => <option key={model.name} value={model.name}>{friendlyModelOptionLabel(model.name, 'answer')}</option>)}
           </select>
           <label className="model-label">Embedding model</label>
           <select value={modelSettings?.current.embedModel ?? ''} onChange={event => updateModel('embedModel', event.target.value)}>
-            {embeddingModelOptions.map(model => <option key={model.name} value={model.name}>{model.name}</option>)}
+            {embeddingModelOptions.map(model => <option key={model.name} value={model.name}>{friendlyModelOptionLabel(model.name, 'embedding')}</option>)}
           </select>
           <div className="model-actions">
             <button onClick={loadSelectedModel} disabled={busy || !modelSettings?.current.llmModel}>Load</button>
@@ -325,7 +362,7 @@ export function App() {
           <div className="local-models">
             {(localModelLibrary?.files ?? []).slice(0, 8).map(file => (
               <div className="local-model" key={file.filePath}>
-                <span>{file.displayName ?? file.fileName}</span>
+                <span>{friendlyAnswerModelLabel(file.displayName ?? file.fileName)}</span>
                 <small>{formatSize(file.sizeBytes)}{file.isSplit ? ` · split GGUF (${file.shardFiles?.length ?? '?'} parts)` : ''}</small>
                 <button onClick={() => importLocalModel(file)} disabled={busy}>{file.isSplit ? 'Load with llama.cpp' : 'Import/select'}</button>
               </div>
